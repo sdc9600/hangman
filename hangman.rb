@@ -1,5 +1,5 @@
 class Hangman
-  attr_reader :turn, :user_secret_word, :secret_word
+  attr_reader :turn, :user_secret_word, :secret_word, :input
   def initialize
     @word_array = []
     @secret_word = ''
@@ -7,6 +7,29 @@ class Hangman
     @turn = 0
     @input = ''
   end
+
+  def save_game
+    save_stream = IO.sysopen('save.txt', "w+")
+    io = IO.new(save_stream)
+    io.puts "#{@secret_word}\n#{@user_secret_word}\n#{@turn}"
+  end
+
+  def load_game
+    answer = ''
+    puts "Would you like to load your previously saved game?"
+    until answer == 'y' || answer == 'n'
+      answer = gets.chomp.downcase
+    end
+    if answer == 'y'
+    read = IO.sysopen 'save.txt'
+    load_stream = IO.new(read)
+    @secret_word = load_stream.gets
+    @user_secret_word = load_stream.gets
+    @turn = load_stream.gets.to_i
+    puts @user_secret_word
+    else
+  end
+end
 
 def start_new_game
     IO.sysopen 'words.txt'
@@ -35,16 +58,24 @@ def start_new_game
 
   def user_turn
     puts "Please guess the secret word for hangman! Turns left: #{10 - @turn}"
-    until @input.match?(/[a-z]/) && @input.length == 1
+    until @input.match?(/[a-z]/) && @input.length == 1 || @input == 'save'
       @input = gets.chomp.downcase
+    end
+    if @input == 'save'
+      save_game
     end
     @turn += 1
   end
 end
 
+
 game = Hangman.new()
 game.start_new_game
+game.load_game
 until game.turn == 10 || game.secret_word == game.user_secret_word
   game.user_turn
+  if game.input == 'save'
+    break
+  end
   game.update_game_screen
 end
