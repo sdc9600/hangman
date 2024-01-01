@@ -1,3 +1,5 @@
+require 'pry-byebug'
+
 class Hangman
   attr_reader :turn, :user_secret_word, :secret_word, :input
   def initialize
@@ -9,31 +11,33 @@ class Hangman
   end
 
   def save_game
-    save_stream = IO.sysopen('save.txt', "w+")
-    io = IO.new(save_stream)
-    io.puts "#{@secret_word}\n#{@user_secret_word}\n#{@turn}"
+    #save_stream = IO.sysopen('save.txt', "w")
+    #io = IO.new(save_stream)
+    writer = File.open('save.txt', 'w+')
+    writer.puts "#{@secret_word}"
+    writer.puts "#{@user_secret_word}"
+    writer.puts "#{@turn}"
+    writer.close
   end
 
   def load_game
+    reader = File.open('save.txt')
     answer = ''
     puts "Would you like to load your previously saved game?"
     until answer == 'y' || answer == 'n'
       answer = gets.chomp.downcase
     end
     if answer == 'y'
-    read = IO.sysopen 'save.txt'
-    load_stream = IO.new(read)
-    @secret_word = load_stream.gets
-    @user_secret_word = load_stream.gets
-    @turn = load_stream.gets.to_i
-    puts @user_secret_word
+    @secret_word = reader.gets
+    @user_secret_word = reader.gets
+    @turn = reader.gets.to_i
+    reader.close
     else
   end
 end
 
 def start_new_game
-    IO.sysopen 'words.txt'
-    words_stream = IO.new(5)
+    words_stream = File.open('words.txt')
     until words_stream.eof? == true
       @word_array.push(words_stream.gets.chomp)
     end
@@ -58,24 +62,22 @@ def start_new_game
 
   def user_turn
     puts "Please guess the secret word for hangman! Turns left: #{10 - @turn}"
-    until @input.match?(/[a-z]/) && @input.length == 1 || @input == 'save'
-      @input = gets.chomp.downcase
-    end
-    if @input == 'save'
-      save_game
-    end
+     until @input.match?(/[a-z]/) && @input.length == 1 || @input == 'save'
+     @input = gets.chomp.downcase
+     end
+     save_game if @input == 'save'
+
     @turn += 1
   end
 end
 
+game = Hangman.new
 
-game = Hangman.new()
 game.start_new_game
 game.load_game
 until game.turn == 10 || game.secret_word == game.user_secret_word
   game.user_turn
-  if game.input == 'save'
-    break
-  end
+  break if game.input == 'save'
+
   game.update_game_screen
 end
